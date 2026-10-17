@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window theme only; Compose provides the actual Material 3 theme. -->
+    <style name="Theme.Homescreener" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- Invisible window for the shortcut trampoline. -->
+    <style name="Theme.Homescreener.Trampoline" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>

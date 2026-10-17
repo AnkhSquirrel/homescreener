@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Homescreener</string>
+
+    <!-- Home screen -->
+    <string name="action_add_file">Add file</string>
+    <string name="home_empty_title">Nothing pinned yet</string>
+    <string name="home_empty_body">Pick any file (a PDF, an image, a document…) and Homescreener will put a shortcut to it on your home screen.</string>
+    <string name="pin_unsupported_banner">Your launcher does not support pinned shortcuts, so items can\'t be added to the home screen.</string>
+    <string name="status_pinned">On home screen</string>
+    <string name="status_not_pinned">Not on home screen</string>
+    <string name="status_unavailable">File unavailable</string>
+
+    <!-- Editor -->
+    <string name="editor_title_new">New shortcut</string>
+    <string name="editor_title_edit">Edit shortcut</string>
+    <string name="action_back">Back</string>
+    <string name="label_hint">Label</string>
+    <string name="file_details">%1$s · %2$s</string>
+    <string name="file_unavailable_explainer">This file can no longer be opened. It may have been moved, renamed or deleted. Replace it or delete the shortcut.</string>
+    <string name="action_replace_file">Replace file</string>
+    <string name="action_pin">Add to home screen</string>
+    <string name="action_repin">Add to home screen again</string>
+    <string name="action_save">Save changes</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="delete_confirm_title">Delete shortcut?</string>
+    <string name="delete_confirm_body">The home screen icon will stop working. The file itself is not deleted.</string>
+
+    <!-- Messages -->
+    <string name="message_pin_requested">Confirm in your launcher to add the shortcut</string>
+    <string name="message_saved">Shortcut updated</string>
+    <string name="message_deleted">Shortcut deleted</string>
+    <string name="error_pin_unsupported">Your launcher does not support pinned shortcuts</string>
+    <string name="error_no_persistable_access">Homescreener can\'t keep access to this file. Try picking it from another location.</string>
+    <string name="error_unknown_shortcut">This shortcut no longer exists</string>
+    <string name="error_file_unavailable">File unavailable</string>
+    <string name="error_no_viewer">No app can open this file</string>
+    <string name="shortcut_disabled_message">This shortcut was deleted in Homescreener</string>
+</resources>
