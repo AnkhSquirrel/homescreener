@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    "JetBrains.kotlin-server",
+    "vscjava.vscode-gradle"
+  ]
+}
