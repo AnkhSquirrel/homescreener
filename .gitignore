@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+build/
+*/build/
+.kotlin/
+
+# Local config (SDK path, secrets)
+local.properties
+
+# Android build outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+captures/
+.externalNativeBuild/
+.cxx/
+output-metadata.json
+
+# Signing keys — never commit
+*.jks
+*.keystore
+keystore.properties
+
+# IDEs
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
