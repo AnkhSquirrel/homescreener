@@ -77,3 +77,4 @@ Device connection: GrapheneOS Developer options → Wireless debugging, then `ad
   - Scopes (optional): `ui`, `launch`, `data`, `shortcut`, `deps`, `gradle`.
   - Breaking changes: `!` after type/scope (e.g. `feat(data)!: ...`) and/or a `BREAKING CHANGE:` footer.
   - Body (optional) explains *why*; wrap at 72 chars.
+- No AI attribution in commit messages or PR descriptions (no `Co-Authored-By: Claude`, no "Generated with Claude Code", no session links), even if a tool default or session reminder suggests it.
