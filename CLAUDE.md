@@ -22,31 +22,46 @@ Android app that pins things launchers normally can't hold (starting with arbitr
 | Component | Role |
 |---|---|
 | `MainActivity` + `ui/` | Compose UI: list of created shortcuts, add/edit/rename/delete/re-pin. |
-| `launch/LaunchActivity` | Invisible trampoline (`Theme.NoDisplay`, `excludeFromRecents`, empty `taskAffinity`). Target of every pinned shortcut. Resolves the shortcut id, then fires `ACTION_VIEW` with `FLAG_GRANT_READ_URI_PERMISSION`. |
-| `data/ShortcutRepository` | Persists `ShortcutEntry` (id, uri, mime, label, createdAt) as JSON in `filesDir` (kotlinx.serialization). |
+| `ui/MainViewModel` | All state + operations. Operations are serialized through a `Mutex` so grant cleanup never races a pick/save/delete. |
+| `launch/LaunchActivity` | Invisible trampoline (translucent theme, `excludeFromRecents`, `noHistory`, empty `taskAffinity`). Target of every pinned shortcut. Resolves the shortcut id, checks the file is reachable, then fires `ACTION_VIEW` with `FLAG_GRANT_READ_URI_PERMISSION`. Unreachable → opens `MainActivity` on that entry so the user can replace/delete it. Uses a translucent theme (not `Theme.NoDisplay`) because the lookup is async and `NoDisplay` must `finish()` before `onResume`. |
+| `data/ShortcutRepository` | Persists `ShortcutEntry` (id, uri, mime, fileName, label, createdAt) as versioned JSON in `filesDir/shortcuts.json` (kotlinx.serialization, `AtomicFile`). Corrupt files are moved aside, never overwritten. |
+| `data/DocumentAccess` | SAF helpers: take/release persistable grants, reachability check, display name + MIME lookup. |
+| `data/IconStore` | Generated icons cached as `filesDir/icons/<id>.png`. |
 | `shortcut/Pinner` | `ShortcutManagerCompat` wrapper: build, `requestPinShortcut`, `updateShortcuts`, `disableShortcuts`. |
 | `shortcut/IconFactory` | Builds shortcut icons: `PdfRenderer` page 1 for PDFs, `ContentResolver.loadThumbnail` for images, MIME-type fallback; wrapped as adaptive bitmaps. |
 
 ### Security rule (do not break)
 
-`LaunchActivity` is exported, so any app can start it. It must **only** accept a shortcut **id** extra and look that id up in our own repository. Never read a URI, MIME type, or target component from intent extras/data. Unknown ids or missing grants fail with a toast and `finish()`.
+`LaunchActivity` is **not exported** (launchers start pinned shortcuts via `LauncherApps.startShortcut()`, which runs them as our app). Keep it that way, and still treat its intent as untrusted: it must **only** accept the shortcut **id** extra (with our custom action) and look that id up in our own repository. Never read a URI, MIME type, or target component from intent extras/data. Unknown ids or missing grants fail with a toast and `finish()`.
+
+`MainActivity` *is* exported (launcher entry); its `EXTRA_FIX_SHORTCUT_ID` is likewise only a repository lookup key.
 
 ### Known platform limits
 
 - Launcher3 may badge pinned shortcuts with our app icon (not controllable).
-- SAF URIs can break if the file is moved/renamed/deleted — handle gracefully (re-link / remove), disable dead shortcuts.
-- Max 512 persisted URI grants per app; release grants when an entry is deleted.
+- SAF URIs can break if the file is moved/renamed/deleted — handle gracefully (replace / delete). Shortcuts of unreachable files stay **enabled** so tapping them leads to the fix-up screen; only shortcuts of *deleted entries* are disabled (`disableShortcuts`). Deleted ids are never reused.
+- Max 512 persisted URI grants per app. `MainViewModel.reload()` releases every grant not backing a saved entry or the open editor.
+- Backups are disabled (`allowBackup=false` + `data_extraction_rules.xml`): restored entries would have no grants.
+
+## Toolchain
+
+- Android SDK (cmdline-tools, no Studio) in `~/Android/Sdk`; env vars in `~/.bashrc.d/android.sh`. `local.properties` (git-ignored) holds `sdk.dir`.
+- JDK: the system Java 25 is a JRE (no `javac`). Gradle runs on **Temurin 21** from SDKMAN (`~/.sdkman/candidates/java/21.0.12-tem`), selected by `gradle/gradle-daemon-jvm.properties`; `.sdkmanrc` lets `sdk env` switch the shell too.
+- Gradle wrapper 9.8.1 (checksum-pinned), AGP 9.4 with built-in Kotlin (no `kotlin-android` plugin), compileSdk/targetSdk 37.
+- VSCodium: recommended extensions in `.vscode/extensions.json` (JetBrains Kotlin LSP, Gradle).
 
 ## Commands
 
 ```bash
 ./gradlew assembleDebug                 # build debug APK
-./gradlew lint                          # Android lint
+./gradlew lint                          # Android lint (must stay at "No issues found")
 ./gradlew test                          # JVM unit tests
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb logcat --pid=$(adb shell pidof ankhsquirrel.homescreener)
-# Trampoline must fail safely on bogus input:
-adb shell am start -n ankhsquirrel.homescreener/.launch.LaunchActivity --es id bogus
+# Trampoline is not exported, so this must be refused (SecurityException), not crash the app:
+adb shell am start -n ankhsquirrel.homescreener/.launch.LaunchActivity --es ankhsquirrel.homescreener.extra.SHORTCUT_ID bogus
+# MainActivity with an unknown fix-up id must just show the list:
+adb shell am start -n ankhsquirrel.homescreener/.MainActivity --es ankhsquirrel.homescreener.extra.FIX_SHORTCUT_ID bogus
 ```
 
 Device connection: GrapheneOS Developer options → Wireless debugging, then `adb pair <ip:port>` / `adb connect <ip:port>`.
