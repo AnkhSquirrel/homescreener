@@ -49,6 +49,16 @@ Android app that pins things launchers normally can't hold (starting with arbitr
 - JDK: the system Java 25 is a JRE (no `javac`). Gradle runs on **Temurin 21** from SDKMAN (`~/.sdkman/candidates/java/21.0.12-tem`), selected by `gradle/gradle-daemon-jvm.properties`; `.sdkmanrc` lets `sdk env` switch the shell too.
 - Gradle wrapper 9.8.1 (checksum-pinned), AGP 9.4 with built-in Kotlin (no `kotlin-android` plugin), compileSdk/targetSdk 37.
 - VSCodium: recommended extensions in `.vscode/extensions.json` (JetBrains Kotlin LSP, Gradle).
+- GitHub Actions (actions pinned to commit SHAs):
+  - `.github/workflows/ci.yml` runs `lint test assembleDebug` on every push to `main` and on every PR, and uploads the debug APK as a workflow artifact.
+  - `.github/workflows/release.yml` runs on `v*` tags and publishes a signed release APK + `.sha256` as a GitHub Release.
+
+## Releasing
+
+1. Bump `versionCode` and `versionName` in `app/build.gradle.kts`, then commit.
+2. `git tag vX.Y.Z && git push origin main vX.Y.Z`. The tag must equal `v` + `versionName`, or the release workflow fails.
+
+Signing: `app/build.gradle.kts` reads the release keystore from the env vars `HOMESCREENER_KEYSTORE`, `HOMESCREENER_KEYSTORE_PASSWORD`, `HOMESCREENER_KEY_ALIAS` and `HOMESCREENER_KEY_PASSWORD` (CI). If those are unset, it falls back to a git-ignored root `keystore.properties` with the keys `storeFile`, `storePassword`, `keyAlias` and `keyPassword` (local builds). With neither, the release APK is unsigned. CI gets the keystore from the repo secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. The keystore must never be committed, and it must be backed up offline: if it is lost, no update can install over an existing release install.
 
 ## Commands
 
