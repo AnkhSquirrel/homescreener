@@ -1,8 +1,23 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+// Release signing: env vars (CI) take precedence over the git-ignored root keystore.properties
+// (local builds). Without either, release builds are left unsigned.
+val keystoreProperties = Properties().apply {
+    providers.fileContents(layout.settingsDirectory.file("keystore.properties"))
+        .asText.orNull?.let { load(it.reader()) }
+}
+
+fun signingValue(envVar: String, property: String): String? =
+    providers.environmentVariable(envVar).orNull?.takeIf { it.isNotEmpty() }
+        ?: keystoreProperties.getProperty(property)
+
+val releaseKeystore = signingValue("HOMESCREENER_KEYSTORE", "storeFile")
 
 android {
     namespace = "ankhsquirrel.homescreener"
@@ -16,8 +31,20 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = layout.settingsDirectory.file(releaseKeystore).asFile
+                storePassword = signingValue("HOMESCREENER_KEYSTORE_PASSWORD", "storePassword")
+                keyAlias = signingValue("HOMESCREENER_KEY_ALIAS", "keyAlias")
+                keyPassword = signingValue("HOMESCREENER_KEY_PASSWORD", "keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
